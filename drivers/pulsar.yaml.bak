@@ -1,0 +1,148 @@
+# Apache Pulsar Driver Configuration for Vehicle Benchmark
+# Optimized for high-throughput, ordered messaging with 100k partitions
+
+name: Pulsar
+driverClass: io.openmessaging.benchmark.driver.pulsar.PulsarBenchmarkDriver
+
+# Client Configuration
+client:
+  # Pulsar service URL
+  # Update this to point to your Pulsar cluster
+  serviceUrl: pulsar://localhost:6650
+  
+  # For TLS:
+  # serviceUrl: pulsar+ssl://pulsar-broker:6651
+  
+  # HTTP admin URL (for topic management)
+  httpUrl: http://localhost:8080
+  
+  # Topic type: persistent or non-persistent
+  # Use persistent for vehicle data that must not be lost
+  topicType: persistent
+  
+  # Namespace for all benchmark topics
+  # Format: tenant/namespace
+  namespace: public/vehicles
+  
+  # Connection settings
+  connectionTimeout: 30000  # ms
+  operationTimeout: 30000   # ms
+  
+  # IO threads (tune based on CPU cores)
+  ioThreads: 8
+  
+  # Listener threads
+  listenerThreads: 8
+
+# Producer Configuration
+producer:
+  # Batching configuration (critical for throughput)
+  batchingEnabled: true
+  batchingMaxMessages: 1000
+  batchingMaxPublishDelayMs: 10  # Tune for latency vs throughput
+  
+  # Block if queue is full (ensures no message loss)
+  blockIfQueueFull: true
+  
+  # Max pending messages in producer queue
+  maxPendingMessages: 10000
+  maxPendingMessagesAcrossPartitions: 500000
+  
+  # Compression (helps with bandwidth)
+  # Options: NONE, LZ4, ZLIB, ZSTD, SNAPPY
+  compressionType: LZ4
+  
+  # Message routing mode
+  # - SinglePartition: All messages to one partition (not suitable for our use case)
+  # - RoundRobinPartition: Distribute messages evenly
+  # - CustomPartition: Use message key for routing (REQUIRED for ordering)
+  messageRoutingMode: CustomPartition
+  
+  # Hashing scheme for key-based routing
+  # - JavaStringHash: Standard Java string hashing
+  # - Murmur3_32Hash: Murmur3 32-bit hash (better distribution)
+  hashingScheme: Murmur3_32Hash
+  
+# Consumer Configuration
+consumer:
+  # Subscription type
+  # - Exclusive: Only one consumer can subscribe (guarantees ordering)
+  # - Shared: Multiple consumers, no ordering guarantee
+  # - Failover: One active consumer, others standby
+  # - Key_Shared: Multiple consumers, messages with same key go to same consumer (BEST for our use case)
+  subscriptionType: Key_Shared
+  
+  # Receiver queue size (messages buffered client-side)
+  receiverQueueSize: 1000
+  
+  # Acknowledgment timeout (ms)
+  acknowledgeTimeout: 30000
+  
+  # Negative acknowledgment redelivery delay (ms)
+  negativeAckRedeliveryDelay: 60000
+  
+  # Max redelivery count
+  maxRedeliverCount: 3
+  
+  # Dead letter topic policy
+  deadLetterPolicy:
+    maxRedeliverCount: 10
+    deadLetterTopic: persistent://public/vehicles/dlq
+  
+  # Consumer priority level (0 = highest)
+  priorityLevel: 0
+
+# Pulsar-Specific Features
+features:
+  # Enable message deduplication (prevents duplicates)
+  enableDeduplication: true
+  
+  # Message TTL (time to live) in seconds
+  # Set to 0 for no expiry
+  messageTTL: 604800  # 7 days
+  
+  # Retention policy
+  retention:
+    retentionTimeInMinutes: 10080  # 7 days
+    retentionSizeInMB: 102400  # 100 GB
+  
+  # Schema validation
+  # Options: AutoConsume, AutoPublish, None
+  schemaValidationEnforced: false
+  
+  # Enable auto-scaling
+  autoScaling:
+    enabled: true
+    # Scale up when avg msg rate exceeds threshold
+    scaleUpThreshold: 80  # percent of capacity
+    # Scale down when avg msg rate below threshold
+    scaleDownThreshold: 20  # percent of capacity
+
+# Replication Configuration (for geo-distributed deployments)
+replication:
+  # Replication clusters (list other Pulsar clusters)
+  clusters: []
+  
+  # Replicated subscription enabled
+  replicatedSubscription: false
+
+# Performance Tuning
+performance:
+  # Memory limit for client (bytes)
+  memoryLimit: 67108864  # 64 MB
+  
+  # Max number of connections per broker
+  connectionsPerBroker: 1
+  
+  # Use TCP no-delay
+  useTcpNoDelay: true
+  
+  # Enable busy-wait (reduces latency, increases CPU)
+  enableBusyWait: false
+
+# Notes for Vehicle Use Case:
+# - Key_Shared subscription ensures ordering per vehicle while allowing parallelism
+# - CustomPartition with Murmur3 hashing provides good key distribution
+# - Batching and compression optimize for high throughput
+# - Retention policy keeps 7 days of data for analytics
+# - LZ4 compression provides good balance of speed and compression ratio

@@ -1,0 +1,178 @@
+# Pravega Driver Configuration for Vehicle Benchmark
+# Optimized for ordered streaming with dynamic scaling
+
+name: Pravega
+driverClass: io.openmessaging.benchmark.driver.pravega.PravegaBenchmarkDriver
+
+# Client Configuration
+client:
+  # Pravega Controller URI
+  # Update this to point to your Pravega cluster
+  controllerURI: tcp://localhost:9090
+  
+  # For TLS:
+  # controllerURI: tls://pravega-controller:9090
+  
+  # Scope name (namespace for all streams)
+  scopeName: vehicles
+  
+  # Create scope if it doesn't exist
+  createScope: true
+
+# Writer (Producer) Configuration
+writer:
+  # Enable connection pooling for better performance
+  enableConnectionPooling: true
+  
+  # Transaction configuration
+  # Transactions provide exactly-once semantics but add overhead
+  # For vehicle use case, at-least-once is usually sufficient
+  enableTransaction: false
+  
+  # Events per transaction (only if transactions enabled)
+  eventsPerTransaction: 100
+  
+  # Routing key configuration
+  # Pravega uses routing keys to determine which segment receives an event
+  # This ensures ordering for events with the same key (vehicle ID)
+  # The framework automatically uses vehicle ID as routing key
+
+# Stream Configuration  
+stream:
+  # Enable stream auto-scaling
+  # Pravega can automatically scale segments based on load
+  enableStreamAutoScaling: true
+  
+  # Scaling policy thresholds
+  # Scale up when rate exceeds these values
+  # Set one or both (whichever is hit first triggers scaling)
+  
+  # Events per second threshold per segment
+  eventsPerSecond: 1000
+  
+  # Kilobytes per second threshold per segment
+  kbytesPerSecond: 10240  # 10 MB/s
+  
+  # Minimum number of segments
+  minSegments: 10
+  
+  # Target rate for scaling calculations
+  # Pravega will try to maintain this rate per segment
+  targetRate: 500  # events per second per segment
+  
+  # Scale factor (segments are multiplied by this when scaling up)
+  scaleFactor: 2
+
+# Reader (Consumer) Configuration
+reader:
+  # Reader group configuration
+  # A reader group is similar to a consumer group in Kafka/Pulsar
+  
+  # Refresh interval for reader group (ms)
+  # How often readers check for new segments or rebalancing
+  refreshInterval: 1000
+  
+  # Checkpoint interval (ms)
+  # How often to checkpoint read positions
+  checkpointInterval: 30000
+  
+  # Max outstanding checkpoint requests
+  maxOutstandingCheckpointRequest: 5
+  
+  # Enable automatic checkpointing
+  automaticCheckpoint: true
+
+# Retention Configuration
+retention:
+  # Retention type
+  # - none: No retention, data kept indefinitely
+  # - time: Keep data for specified duration
+  # - size: Keep up to specified size
+  # - timeAndSize: Keep based on whichever limit is hit first
+  type: time
+  
+  # Retention time (milliseconds)
+  # 7 days retention for vehicle data
+  retentionTimeMs: 604800000
+  
+  # Max retention size (bytes)
+  # 500 GB per stream
+  retentionSizeBytes: 536870912000
+
+# Serialization Configuration
+serialization:
+  # Include timestamp in event
+  # Set to true to measure end-to-end latency
+  includeTimestampInEvent: true
+  
+  # Custom payload attributes
+  # Additional metadata to include with each event
+  payloadAttributes:
+    - name: vehicleId
+      type: string
+    - name: messageType
+      type: string
+    - name: timestamp
+      type: long
+
+# Connection Configuration
+connection:
+  # Connection pool size
+  maxConnectionsPerSegmentStore: 10
+  
+  # Socket connection timeout (ms)
+  socketTimeout: 30000
+  
+  # Enable keep-alive
+  enableKeepAlive: true
+  
+  # Keep-alive time (ms)
+  keepAliveTime: 60000
+
+# Performance Tuning
+performance:
+  # Event write configuration
+  # Enable batching for better throughput
+  enableBatching: true
+  
+  # Max batch size (events)
+  maxBatchSize: 100
+  
+  # Max batch time (ms)
+  maxBatchTime: 20
+  
+  # Max inflight messages
+  maxInflightMessages: 10000
+  
+  # Buffer size for reads (bytes)
+  readBufferSize: 1048576  # 1 MB
+  
+  # Enable large events support
+  # Useful for video metadata (10KB messages)
+  enableLargeEvents: true
+  
+  # Max event size (bytes)
+  maxEventSize: 1048576  # 1 MB
+
+# High Availability Configuration
+ha:
+  # Enable controller failover
+  enableControllerFailover: true
+  
+  # Controller connection retry attempts
+  controllerRetryAttempts: 10
+  
+  # Retry backoff (ms)
+  retryBackoff: 1000
+  
+  # Enable segment store failover
+  enableSegmentStoreFailover: true
+
+# Notes for Vehicle Use Case:
+# - Auto-scaling adapts to changing vehicle count (easy scale up/down)
+# - Routing keys ensure per-vehicle message ordering
+# - Dynamic segmentation provides elastic scaling
+# - 7-day retention for analysis and replay
+# - Batching and connection pooling optimize throughput
+# - Large events support handles video metadata
+# - Checkpointing provides exactly-once read semantics

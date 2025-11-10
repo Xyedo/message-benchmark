@@ -1,0 +1,40 @@
+# Workload: 100,000 Vehicles - Video Metadata
+# Scenario: Dashcam and surveillance camera metadata every 30 seconds
+# Use Case: Video indexing, incident detection, driver behavior analysis
+
+name: vehicles-video-100k
+
+# Topic Configuration
+topics: 100
+partitionsPerTopic: 1000
+
+# Partitioning Strategy
+keyDistributor: KEY_ORDER
+
+# Message Configuration
+# Video metadata includes:
+# - Stream URL, codec info, resolution
+# - Thumbnail/preview image data (base64 encoded)
+# - Scene detection markers
+# - GPS coordinates at time of recording
+# - Duration, bitrate, frame rate
+# Approximate size: 10KB
+messageSize: 10240
+payloadFile: "payload/video-10kb.data"
+
+# Producer Configuration
+# 100,000 vehicles sending video metadata every 30 seconds = ~3,333 messages/second
+producersPerTopic: 1
+producerRate: 3333
+
+# Consumer Configuration
+# Consumer groups:
+# - Real-time incident detection (1 subscription)
+# - Video cataloging/indexing (1 subscription)
+subscriptionsPerTopic: 2
+consumerPerSubscription: 3
+
+# Test Configuration
+# Longer duration due to larger message size and lower frequency
+testDurationMinutes: 15
+consumerBacklogSizeGB: 0

@@ -1,0 +1,35 @@
+# Apache Pulsar Driver Configuration for Vehicle Benchmark
+# Optimized for high-throughput, ordered messaging with 100k partitions
+
+name: Pulsar
+driverClass: io.openmessaging.benchmark.driver.pulsar.PulsarBenchmarkDriver
+
+# Pulsar client-specific configuration
+client:
+  serviceUrl: pulsar://localhost:6650
+  httpUrl: http://localhost:8080
+  ioThreads: 8
+  connectionsPerBroker: 8
+  clusterName: standalone
+  namespacePrefix: public/vehicles
+  topicType: persistent
+  persistence:
+    ensembleSize: 1
+    writeQuorum: 1
+    ackQuorum: 1
+    deduplicationEnabled: false
+  tlsAllowInsecureConnection: false
+  tlsEnableHostnameVerification: false
+
+# Producer configuration
+producer:
+  batchingEnabled: true
+  batchingMaxPublishDelayMs: 10
+  blockIfQueueFull: true
+  pendingQueueSize: 10000
+
+# Notes for Vehicle Use Case:
+# - Use Key_Shared subscription type in workload config for ordered parallel processing
+# - namespacePrefix will be used for all benchmark topics
+# - topicType: persistent ensures message durability
+# - Batching is enabled for better throughput

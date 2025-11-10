@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if [ -d "./lib" ]; then
+        CLASSPATH=$CLASSPATH:lib/*
+else
+    CLASSPATH=benchmark-framework/target/classes:`cat benchmark-framework/target/classpath.txt`
+fi
+
+if [ -z "$HEAP_OPTS" ]
+then
+    HEAP_OPTS="-Xms4G -Xmx4G"
+fi
+
+JVM_MEM="${HEAP_OPTS} -XX:+UseG1GC"
+JVM_GC_LOG=" -XX:+PrintGCDetails -XX:+PrintGCApplicationStoppedTime  -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=64m  -Xloggc:/dev/shm/benchmark-client-gc_%p.log"
+# Required by Netty for optimized direct byte buffer access
+JVM_OPTS="$JVM_OPTS -Dio.netty.tryReflectionSetAccessible=true"
+JVM_OPTS="$JVM_OPTS --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
+# Set io.netty.tryReflectionSetAccessible in Pulsar's shaded client
+JVM_OPTS="$JVM_OPTS -Dorg.apache.pulsar.shade.io.netty.tryReflectionSetAccessible=true"
+# Required by Pulsar client optimized checksum calculation on other than Linux x86_64 platforms
+# reflection access to java.util.zip.CRC32C
+JVM_OPTS="$JVM_OPTS --add-opens java.base/java.util.zip=ALL-UNNAMED"
+exec java -server -cp $CLASSPATH $JVM_MEM $JVM_OPTS io.openmessaging.benchmark.worker.BenchmarkWorker "$@"

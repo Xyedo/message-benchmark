@@ -1,0 +1,42 @@
+# Pravega Test: 100k Vehicles with Single Stream
+# Scenario: GPS location updates from vehicles every 5 seconds
+# Architecture: 1 stream with 100k segments (1 per vehicle)
+
+name: vehicles-location-100k-pravega-single-stream
+
+# Topic Configuration
+# Test: 1 topic with 100,000 partitions = 100,000 vehicles
+# Each partition = 1 segment in Pravega stream for ordering
+topics: 1
+partitionsPerTopic: 100
+
+# Partitioning Strategy
+# KEY_ORDER: Use vehicle ID as key for routing to segments
+# Pravega handles ordering via routing keys within stream
+keyDistributor: KEY_ORDER
+
+# Message Configuration
+# Location payload: GPS coordinates, timestamp, speed, heading
+# Approximate size: 200 bytes
+messageSize: 200
+payloadFile: "payload/location-200b.data"
+
+# Producer Configuration
+# 100,000 vehicles sending location every 1 seconds = 1000000 messages/second
+# 1 producer for the single topic
+producersPerTopic: 100
+producerRate: 10000  # Total messages per second
+
+# Consumer Configuration
+# 1 consumer per topic to maintain ordering
+consumerPerSubscription: 100
+subscriptionsPerTopic: 1
+
+# Test Duration
+# Warm-up period before collecting metrics
+testDurationMinutes: 2
+warmupDurationMinutes: 1
+
+# Consumer Backlog
+# No backlog for real-time vehicle tracking
+consumerBacklogSizeGB: 0

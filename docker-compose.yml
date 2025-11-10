@@ -1,0 +1,77 @@
+services:
+  # NATS Server with JetStream
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: "-js -m 8222 -sd /data"
+    volumes:
+      - nats-data:/data
+    networks:
+      - benchmark-net
+  
+  # ZooKeeper for Pulsar and Pravega
+  zookeeper:
+    image: zookeeper:3.8
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - benchmark-net
+  
+  # Pulsar Standalone (includes broker and bookie)
+  pulsar:
+    image: apachepulsar/pulsar:latest
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    environment:
+      PULSAR_MEM: "-Xmx2g -Xms2g"
+    command: bin/pulsar standalone
+    networks:
+      - benchmark-net
+    depends_on:
+      - zookeeper
+  
+  # Pravega Standalone (includes controller, segment store, and BookKeeper)
+  pravega:
+    image: pravega/pravega:latest
+    ports:
+      - "9090:9090"
+      - "12345:12345"
+    command: standalone
+    volumes:
+      - pravega-data:/data
+    networks:
+      - benchmark-net
+  
+  # HDFS for Pravega storage
+  hdfs:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    ports:
+      - "9000:9000"
+      - "9870:9870"
+    environment:
+      CLUSTER_NAME: pravega-cluster
+      CORE_CONF_fs_defaultFS: hdfs://hdfs:9000
+    volumes:
+      - hdfs-data:/hadoop/dfs/name
+    networks:
+      - benchmark-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  nats-data:
+  hdfs-data:
+  pravega-data:
+
+networks:
+  benchmark-net:
+    driver: bridge

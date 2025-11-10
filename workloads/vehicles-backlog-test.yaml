@@ -1,0 +1,40 @@
+# Workload: Vehicle Backlog Test
+# Scenario: Test system behavior with message backlog
+# Purpose: Simulate consumer downtime and recovery
+# Use Case: Test what happens when consumers can't keep up
+
+name: vehicles-backlog-test
+
+# Topic Configuration
+topics: 20  # Smaller scale for backlog test
+partitionsPerTopic: 500  # 10,000 vehicles total
+
+# Partitioning Strategy
+keyDistributor: KEY_ORDER
+
+# Message Configuration
+# Sensor data (1KB messages)
+messageSize: 1024
+payloadFile: "payload/sensor-1kb.data"
+
+# Producer Configuration
+# Moderate rate to build backlog reasonably quickly
+producersPerTopic: 1
+producerRate: 5000
+
+# Consumer Configuration
+subscriptionsPerTopic: 1
+consumerPerSubscription: 2
+
+# Backlog Configuration
+# Build up 10 GB of backlog before starting consumers
+# This simulates a scenario where consumers were down/slow
+# The test will:
+# 1. Produce messages until 10 GB backlog is reached
+# 2. Start consumers to drain the backlog
+# 3. Measure catch-up performance
+consumerBacklogSizeGB: 10
+
+# Test Configuration
+# Duration is flexible - test ends when backlog is drained
+testDurationMinutes: 60

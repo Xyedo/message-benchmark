@@ -1,0 +1,41 @@
+# Workload: 100,000 Vehicles - Location Data
+# Scenario: GPS location updates from vehicles every 5 seconds
+# Use Case: Real-time vehicle tracking and fleet management
+
+name: vehicles-location-100k
+
+# Topic Configuration
+# 100 topics with 1,000 partitions each = 100,000 vehicles total
+# Each partition represents one vehicle to ensure ordering
+topics: 100000
+partitionsPerTopic: 1
+
+# Partitioning Strategy
+# KEY_ORDER: Use vehicle ID as key to ensure all messages from same vehicle go to same partition
+# This guarantees message ordering per vehicle
+keyDistributor: KEY_ORDER
+
+# Message Configuration
+# Location payload: GPS coordinates, timestamp, speed, heading
+# Approximate size: 200 bytes
+# Format: { "vehicleId": "V-12345", "lat": 40.7128, "lon": -74.0060, "speed": 65, "heading": 180, "timestamp": 1699632000 }
+messageSize: 200
+payloadFile: "payload/location-200b.data"
+
+# Producer Configuration
+# 100,000 vehicles sending location every 1 seconds = 100,000 messages/second
+producersPerTopic: 1
+producerRate: 1  # Total messages per second across all producers
+
+# Consumer Configuration
+# 1 subscription per topic for real-time fleet monitoring
+# 2 consumers per subscription for parallel processing
+subscriptionsPerTopic: 1
+consumerPerSubscription: 1
+
+# Test Configuration
+# Run for 15 minutes to get stable metrics
+testDurationMinutes: 15
+
+# No backlog build-up for this real-time scenario
+consumerBacklogSizeGB: 0

@@ -1,0 +1,29 @@
+# NATS Driver Configuration for Vehicle Benchmark
+# This configuration uses NATS for ordered messaging
+
+name: NATS
+driverClass: io.openmessaging.benchmark.driver.nats.NatsBenchmarkDriver
+
+# NATS Server URL
+# For single server
+natsHostUrl: nats://localhost:4222
+
+# For clustered NATS (comma-separated):
+# natsHostUrl: nats://localhost:4222,nats://localhost:4223,nats://localhost:4224
+
+# JetStream Configuration
+# Replication factor: number of replicas for each stream (1-5)
+# Use 1 for single server, 3 for production clusters
+replicationFactor: 1
+
+# Storage type: File or Memory
+storageType: File
+
+# Max bytes per stream (-1 = unlimited)
+maxBytes: -1
+
+# Notes for Vehicle Use Case:
+# - NATS provides ordered messaging within each subject (vehicle)
+# - Subject-based routing ensures per-vehicle ordering
+# - Use NATS JetStream for persistence and replay capabilities
+# - replicationFactor must match available servers (1-5 range)

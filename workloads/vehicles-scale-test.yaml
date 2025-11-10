@@ -1,0 +1,41 @@
+# Workload: Vehicle Scale Test
+# Scenario: Test system behavior as vehicle count scales from 10k to 100k
+# Purpose: Evaluate elasticity and auto-scaling capabilities
+# This workload uses producer rate = 0 to find maximum sustainable throughput
+
+name: vehicles-scale-test
+
+# Topic Configuration
+# Start with infrastructure for 100k vehicles
+topics: 100
+partitionsPerTopic: 1000
+
+# Partitioning Strategy
+keyDistributor: KEY_ORDER
+
+# Message Configuration
+# Use location data as baseline (smallest, most frequent)
+messageSize: 200
+payloadFile: "payload/location-200b.data"
+
+# Producer Configuration
+# Set rate to 0 to discover maximum sustainable rate
+# The framework will automatically find the max throughput
+producersPerTopic: 2  # More producers to push the system
+producerRate: 0  # 0 = discover max sustainable rate
+
+# Consumer Configuration
+# Scale consumers to handle high throughput
+subscriptionsPerTopic: 1
+consumerPerSubscription: 4
+
+# Test Configuration
+# Run for 30 minutes to observe:
+# - Initial ramp-up behavior
+# - Steady-state performance
+# - Resource utilization trends
+# - Any degradation over time
+testDurationMinutes: 30
+
+# No backlog for max throughput test
+consumerBacklogSizeGB: 0

@@ -1,0 +1,39 @@
+# Workload: 100,000 Vehicles - Sensor Data
+# Scenario: Engine and environmental sensor readings every 10 seconds
+# Use Case: Predictive maintenance, diagnostics, vehicle health monitoring
+
+name: vehicles-sensor-100k
+
+# Topic Configuration
+# 100 topics with 1,000 partitions each = 100,000 vehicles
+topics: 100
+partitionsPerTopic: 1000
+
+# Partitioning Strategy
+# Use vehicle ID as key for ordering
+keyDistributor: KEY_ORDER
+
+# Message Configuration
+# Sensor payload includes:
+# - Engine metrics (RPM, oil pressure, coolant temp, fuel level)
+# - Environmental (outside temp, cabin temp, humidity)
+# - Battery status, tire pressure, brake wear
+# Approximate size: 1KB
+messageSize: 1024
+payloadFile: "payload/sensor-1kb.data"
+
+# Producer Configuration
+# 100,000 vehicles sending sensor data every 10 seconds = 10,000 messages/second
+producersPerTopic: 1
+producerRate: 10000
+
+# Consumer Configuration
+# Multiple consumer groups for different use cases:
+# - Real-time alerts (1 subscription)
+# - Data warehouse/analytics (1 subscription)
+subscriptionsPerTopic: 2
+consumerPerSubscription: 2
+
+# Test Configuration
+testDurationMinutes: 15
+consumerBacklogSizeGB: 0

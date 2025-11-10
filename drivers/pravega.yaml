@@ -1,0 +1,30 @@
+# Pravega Driver Configuration for Vehicle Benchmark
+# Optimized for elastic scaling and stream-based ordering
+
+name: Pravega
+driverClass: io.openmessaging.benchmark.driver.pravega.PravegaBenchmarkDriver
+
+# Pravega client-specific configuration
+client:
+  controllerURI: tcp://localhost:9090
+  scopeName: vehicles
+
+# Writer configuration
+writer:
+  enableConnectionPooling: true
+
+# Include timestamp in events for latency tracking
+includeTimestampInEvent: true
+
+# Enable auto-scaling for streams (recommended for vehicle use case)
+enableStreamAutoScaling: true
+eventsPerSecond: 10000
+
+# Use custom payload format
+customPayload: true
+
+# Notes for Vehicle Use Case:
+# - Pravega uses routing keys for ordering (vehicle ID as key)
+# - Auto-scaling adjusts stream segments based on load
+# - Scope "vehicles" will contain all benchmark streams
+# - Connection pooling improves performance

@@ -1,0 +1,47 @@
+# Workload: 100,000 Vehicles - Mixed Payload Types
+# Scenario: Realistic mixed traffic from vehicles
+# - Location updates (frequent, small)
+# - Sensor data (moderate frequency, medium size)
+# - Video metadata (infrequent, large)
+
+name: vehicles-mixed-100k
+
+# Topic Configuration
+# All message types share the same topic/partition structure
+# This simulates real-world where vehicles send different data types over time
+topics: 100
+partitionsPerTopic: 1000
+
+# Partitioning Strategy
+keyDistributor: KEY_ORDER
+
+# Message Configuration
+# Average message size based on mix:
+# - 60% location (200B) = 120B
+# - 30% sensor (1KB) = 307B
+# - 10% video (10KB) = 1024B
+# Average: ~1451B ≈ 1.5KB
+messageSize: 1536
+payloadFile: "payload/mixed-1.5kb.data"
+
+# Producer Configuration
+# Total rate combines all message types:
+# - Location: 20,000 msg/s (60%)
+# - Sensor: 10,000 msg/s (30%)
+# - Video: 3,333 msg/s (10%)
+# Total: ~33,333 msg/s
+producersPerTopic: 1
+producerRate: 33333
+
+# Consumer Configuration
+# Multiple consumer groups for different processing pipelines:
+# - Real-time monitoring dashboard (1 subscription)
+# - Analytics pipeline (1 subscription)
+# - Archival/long-term storage (1 subscription)
+subscriptionsPerTopic: 3
+consumerPerSubscription: 4
+
+# Test Configuration
+# Longer test to ensure we see patterns across different message types
+testDurationMinutes: 30
+consumerBacklogSizeGB: 0
