@@ -48,8 +48,21 @@ def group_by_workload(results: List[Dict[str, Any]]) -> Dict[str, List[Dict[str,
 def create_throughput_chart(results: List[Dict[str, Any]], output_dir: str):
     """Create throughput comparison chart"""
     drivers = [r['driver'] for r in results]
-    publish_rates = [r.get('publishRate', 0) for r in results]
-    consume_rates = [r.get('consumeRate', 0) for r in results]
+    
+    # Extract and aggregate rates (handle lists/arrays by taking mean)
+    publish_rates = []
+    consume_rates = []
+    
+    for r in results:
+        pub_rate = r.get('publishRate', 0)
+        if isinstance(pub_rate, (list, np.ndarray)):
+            pub_rate = np.mean(pub_rate) if len(pub_rate) > 0 else 0
+        publish_rates.append(float(pub_rate))
+        
+        cons_rate = r.get('consumeRate', 0)
+        if isinstance(cons_rate, (list, np.ndarray)):
+            cons_rate = np.mean(cons_rate) if len(cons_rate) > 0 else 0
+        consume_rates.append(float(cons_rate))
     
     x = np.arange(len(drivers))
     width = 0.35
@@ -82,9 +95,27 @@ def create_throughput_chart(results: List[Dict[str, Any]], output_dir: str):
 def create_latency_chart(results: List[Dict[str, Any]], output_dir: str):
     """Create latency comparison chart"""
     drivers = [r['driver'] for r in results]
-    p50 = [r.get('publishLatency50pct', 0) for r in results]
-    p95 = [r.get('publishLatency95pct', 0) for r in results]
-    p99 = [r.get('publishLatency99pct', 0) for r in results]
+    
+    # Extract and aggregate latencies (handle lists/arrays by taking mean)
+    p50 = []
+    p95 = []
+    p99 = []
+    
+    for r in results:
+        val = r.get('publishLatency50pct', 0)
+        if isinstance(val, (list, np.ndarray)):
+            val = np.mean(val) if len(val) > 0 else 0
+        p50.append(float(val))
+        
+        val = r.get('publishLatency95pct', 0)
+        if isinstance(val, (list, np.ndarray)):
+            val = np.mean(val) if len(val) > 0 else 0
+        p95.append(float(val))
+        
+        val = r.get('publishLatency99pct', 0)
+        if isinstance(val, (list, np.ndarray)):
+            val = np.mean(val) if len(val) > 0 else 0
+        p99.append(float(val))
     
     x = np.arange(len(drivers))
     width = 0.25
@@ -118,8 +149,21 @@ def create_latency_chart(results: List[Dict[str, Any]], output_dir: str):
 def create_end_to_end_latency_chart(results: List[Dict[str, Any]], output_dir: str):
     """Create end-to-end latency comparison chart"""
     drivers = [r['driver'] for r in results]
-    avg_latency = [r.get('endToEndLatencyAvg', 0) for r in results]
-    p99_latency = [r.get('endToEndLatency99pct', 0) for r in results]
+    
+    # Extract and aggregate latencies (handle lists/arrays by taking mean)
+    avg_latency = []
+    p99_latency = []
+    
+    for r in results:
+        val = r.get('endToEndLatencyAvg', 0)
+        if isinstance(val, (list, np.ndarray)):
+            val = np.mean(val) if len(val) > 0 else 0
+        avg_latency.append(float(val))
+        
+        val = r.get('endToEndLatency99pct', 0)
+        if isinstance(val, (list, np.ndarray)):
+            val = np.mean(val) if len(val) > 0 else 0
+        p99_latency.append(float(val))
     
     x = np.arange(len(drivers))
     width = 0.35
@@ -165,14 +209,30 @@ def create_summary_table(grouped_results: Dict[str, List[Dict[str, Any]]], outpu
             
             for result in results:
                 driver = result.get('driver', 'unknown')
-                pub_rate = result.get('publishRate', 0)
-                con_rate = result.get('consumeRate', 0)
-                p50_lat = result.get('publishLatency50pct', 0)
-                p99_lat = result.get('publishLatency99pct', 0)
-                e2e_avg = result.get('endToEndLatencyAvg', 0)
                 
-                f.write(f"{driver:<15} {pub_rate:<15.0f} {con_rate:<15.0f} "
-                       f"{p50_lat:<15.2f} {p99_lat:<15.2f} {e2e_avg:<15.2f}\n")
+                # Extract and aggregate values (handle lists by taking mean)
+                pub_rate = result.get('publishRate', 0)
+                if isinstance(pub_rate, (list, np.ndarray)):
+                    pub_rate = np.mean(pub_rate) if len(pub_rate) > 0 else 0
+                
+                con_rate = result.get('consumeRate', 0)
+                if isinstance(con_rate, (list, np.ndarray)):
+                    con_rate = np.mean(con_rate) if len(con_rate) > 0 else 0
+                
+                p50_lat = result.get('publishLatency50pct', 0)
+                if isinstance(p50_lat, (list, np.ndarray)):
+                    p50_lat = np.mean(p50_lat) if len(p50_lat) > 0 else 0
+                
+                p99_lat = result.get('publishLatency99pct', 0)
+                if isinstance(p99_lat, (list, np.ndarray)):
+                    p99_lat = np.mean(p99_lat) if len(p99_lat) > 0 else 0
+                
+                e2e_avg = result.get('endToEndLatencyAvg', 0)
+                if isinstance(e2e_avg, (list, np.ndarray)):
+                    e2e_avg = np.mean(e2e_avg) if len(e2e_avg) > 0 else 0
+                
+                f.write(f"{driver:<15} {float(pub_rate):<15.0f} {float(con_rate):<15.0f} "
+                       f"{float(p50_lat):<15.2f} {float(p99_lat):<15.2f} {float(e2e_avg):<15.2f}\n")
             
             f.write("\n")
     
@@ -192,40 +252,48 @@ def create_comparison_report(grouped_results: Dict[str, List[Dict[str, Any]]], o
             f.write("| Metric | " + " | ".join([r.get('driver', 'unknown') for r in results]) + " |\n")
             f.write("|--------|" + "|".join(["--------"] * len(results)) + "|\n")
             
+            # Helper function to extract and aggregate
+            def get_mean(val):
+                if isinstance(val, (list, np.ndarray)):
+                    return float(np.mean(val)) if len(val) > 0 else 0.0
+                return float(val) if val else 0.0
+            
             # Throughput
             f.write("| **Publish Rate (msg/s)** | ")
-            f.write(" | ".join([f"{r.get('publishRate', 0):,.0f}" for r in results]) + " |\n")
+            f.write(" | ".join([f"{get_mean(r.get('publishRate', 0)):,.0f}" for r in results]) + " |\n")
             
             f.write("| **Consume Rate (msg/s)** | ")
-            f.write(" | ".join([f"{r.get('consumeRate', 0):,.0f}" for r in results]) + " |\n")
+            f.write(" | ".join([f"{get_mean(r.get('consumeRate', 0)):,.0f}" for r in results]) + " |\n")
             
             # Latency
             f.write("| **Publish P50 Latency (ms)** | ")
-            f.write(" | ".join([f"{r.get('publishLatency50pct', 0):.2f}" for r in results]) + " |\n")
+            f.write(" | ".join([f"{get_mean(r.get('publishLatency50pct', 0)):.2f}" for r in results]) + " |\n")
             
             f.write("| **Publish P99 Latency (ms)** | ")
-            f.write(" | ".join([f"{r.get('publishLatency99pct', 0):.2f}" for r in results]) + " |\n")
+            f.write(" | ".join([f"{get_mean(r.get('publishLatency99pct', 0)):.2f}" for r in results]) + " |\n")
             
             f.write("| **End-to-End Avg Latency (ms)** | ")
-            f.write(" | ".join([f"{r.get('endToEndLatencyAvg', 0):.2f}" for r in results]) + " |\n")
+            f.write(" | ".join([f"{get_mean(r.get('endToEndLatencyAvg', 0)):.2f}" for r in results]) + " |\n")
             
             f.write("| **End-to-End P99 Latency (ms)** | ")
-            f.write(" | ".join([f"{r.get('endToEndLatency99pct', 0):.2f}" for r in results]) + " |\n")
+            f.write(" | ".join([f"{get_mean(r.get('endToEndLatency99pct', 0)):.2f}" for r in results]) + " |\n")
             
             f.write("\n")
             
             # Winner analysis
             f.write("### Analysis\n\n")
             
-            # Find best throughput
-            best_throughput_idx = max(range(len(results)), key=lambda i: results[i].get('publishRate', 0))
+            # Find best throughput (extract means first)
+            throughputs = [get_mean(r.get('publishRate', 0)) for r in results]
+            best_throughput_idx = max(range(len(results)), key=lambda i: throughputs[i])
             f.write(f"- **Best Throughput**: {results[best_throughput_idx].get('driver', 'unknown')} ")
-            f.write(f"({results[best_throughput_idx].get('publishRate', 0):,.0f} msg/s)\n")
+            f.write(f"({throughputs[best_throughput_idx]:,.0f} msg/s)\n")
             
-            # Find best latency
-            best_latency_idx = min(range(len(results)), key=lambda i: results[i].get('publishLatency99pct', float('inf')))
+            # Find best latency (extract means first)
+            latencies = [get_mean(r.get('publishLatency99pct', float('inf'))) for r in results]
+            best_latency_idx = min(range(len(results)), key=lambda i: latencies[i] if latencies[i] > 0 else float('inf'))
             f.write(f"- **Lowest P99 Latency**: {results[best_latency_idx].get('driver', 'unknown')} ")
-            f.write(f"({results[best_latency_idx].get('publishLatency99pct', 0):.2f} ms)\n")
+            f.write(f"({latencies[best_latency_idx]:.2f} ms)\n")
             
             f.write("\n")
     
